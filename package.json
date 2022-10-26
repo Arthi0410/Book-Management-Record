@@ -1,0 +1,15 @@
+{
+  "name": "book-management-record",
+  "version": "1.0.0",
+  "description": "Book management record",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Arthi Chebrolu",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "nodemon": "^2.0.20"
+  }
+}

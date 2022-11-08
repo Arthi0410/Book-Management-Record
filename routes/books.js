@@ -1,4 +1,5 @@
 const express = require("express");
+const { getallbooks, getsinglebookbyid, getallissuedbooks, createnewbook } = require("../controllers/book-contoller");
 const { books } = require("../data/books.json");
 const { users } = require("../data/users.json");
 
@@ -12,12 +13,7 @@ const router = express.Router();
  * Parameters:none
  */
 
-router.get("/", (req, res) => {
-    res.status(200).json({
-        success: true,
-        data: books,
-    });
-});
+router.get("/", getallbooks);
 
 /**
  * Route: /books/:id
@@ -27,20 +23,7 @@ router.get("/", (req, res) => {
  * Parameters:id
  */
 
-router.get("/:id", (req, res) => {
-    const { id } = req.params;
-    const book = books.find((each) => each.id === id);
-    if (!book) {
-        res.status(404).json({
-            success: false,
-            message: "Book not found"
-        });
-    }
-    res.status(200).json({
-        success: true,
-        data: book,
-    });
-});
+router.get("/:id", getsinglebookbyid);
 
 /**
  * Route: /books
@@ -50,28 +33,7 @@ router.get("/:id", (req, res) => {
  * Parameters:none
  */
 
-router.post("/", (req, res) => {
-    const { id, name, author, genre, price, publisher } = req.body;
-    const book = books.find((each) => each.id === id);
-    if (book) {
-        res.status(404).json({
-            success: false,
-            message: "Book with id already exists"
-        });
-    }
-    books.push({
-        id,
-        name,
-        author,
-        genre,
-        price,
-        publisher
-    });
-    res.status(200).json({
-        success: true,
-        data: books,
-    });
-});
+router.post("/", createnewbook);
 
 /**
  * Route: /books/:id
@@ -114,30 +76,76 @@ router.put("/:id", (req, res) => {
  * Parameters:Issuedbooks
  */
 
-router.get("/issued/by-user", (req, res) => {
+router.get("/issued/by-user", getallissuedbooks);
+
+/**
+ * Route: /books/fine/books
+ * Method: GET
+ * Description: Getting all issued books with fine
+ * Access: Public
+ * Parameters:none
+ */
+
+router.get("/fine/books", (req, res) => {
     const userswithissuedbooks = users.filter((each) => {
         if (each.issuedBook) return each;
     });
 
-    const issuedBooks = [];
+    const issuedbooksfine = [];
+
     userswithissuedbooks.forEach((each) => {
         const book = books.find((book) => book.id === each.issuedBook)
 
-        book.issuedby = each.name;
-        book.issueddate = each.issuedDate;
         book.returndate = each.returnDate;
+        book.subscriptiondate = each.subscriptionDate;
 
-        issuedBooks.push(book);
+        issuedbooksfine.push(book);
     });
-    if (issuedBooks.length === 0) {
+
+    const getDateinDays = (data = "") => {
+        let date;
+        if (data === "") {
+            date = new Date();
+        } else {
+            date = new Date(data);
+        }
+        let days = Math.floor(date / (1000 * 60 * 60 * 24));
+        return days;
+    };
+
+
+    const subscriptionType = (date) => {
+        if (users.subscriptionType === "Basic") {
+            date = date + 90;
+        } else if (users.subscriptionType === "Standard") {
+            date = date + 180;
+        } else if (users.subscriptionType === "Premium") {
+            date = date + 365;
+        }
+        return date;
+    };
+
+    const returndate = getDateinDays(issuedbooksfine.returnDate);
+    const currentDate = getDateinDays();
+
+    console.log(returndate);
+    console.log(currentDate);
+
+    const data = [];
+    if (returndate < currentDate) {
+        data.push(issuedbooksfine);
+    };
+
+    if (data.length === 0) {
         res.status(404).json({
             success: false,
-            message: "No issued books"
-        });
+            message: "No issued books with fine"
+        })
     }
+
     res.status(200).json({
         success: true,
-        data: issuedBooks
+        data: data
     });
 });
 
